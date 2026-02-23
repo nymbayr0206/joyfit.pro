@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16
+    container_name: joyfit-app-db-1
+    environment:
+      POSTGRES_USER: joyfit
+      POSTGRES_PASSWORD: joyfit
+      POSTGRES_DB: joyfit
+    volumes:
+      - joyfit_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U joyfit -d joyfit"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  joyfit-web:
+    build: .
+    container_name: joyfit-web
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  joyfit_pgdata:

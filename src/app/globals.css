@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
+@theme inline {
+  --color-joyfit-primary: #16A34A;
+  --color-joyfit-primary-hover: #15803D;
+  --color-joyfit-primary-light: #DCFCE7;
+  --color-charcoal: #111111;
+  --color-charcoal-soft: #1F2937;
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-500: #6B7280;
+  --color-gray-600: #4B5563;
+  --font-mongolian: "Noto Sans Mongolian", sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground: #111111;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-mongolian);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Joyfit buttons */
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-2xl font-semibold px-6 py-3.5 transition-all;
+  background-color: var(--color-joyfit-primary);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+}
+.btn-primary:hover {
+  background-color: var(--color-joyfit-primary-hover);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+}
+.btn-outline {
+  @apply inline-flex items-center justify-center rounded-2xl font-semibold px-6 py-3.5 border-2 border-[var(--color-charcoal)] bg-transparent text-[var(--color-charcoal)] transition-all;
+}
+.btn-outline:hover {
+  @apply bg-[var(--color-gray-100)];
+}
+
+/* Form inputs */
+.input-field {
+  @apply w-full rounded-xl border-2 border-gray-200 px-4 py-3.5 text-base focus:border-[var(--color-joyfit-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-joyfit-primary)]/20;
+}
+.input-field.error {
+  @apply border-red-500 focus:border-red-500 focus:ring-red-500/20;
+}
+.label {
+  @apply block text-sm font-medium text-[var(--color-charcoal-soft)] mb-1.5;
+}
+
+/* Step card */
+.step-card {
+  @apply bg-white rounded-2xl shadow-[0_10px_15px_-3px_rgba(0,0,0,0.06),0_4px_6px_-4px_rgba(0,0,0,0.04)] p-6 sm:p-8;
+}
+
+/* Option buttons (single choice) */
+.option-btn {
+  @apply w-full text-left rounded-xl border-2 border-gray-200 px-4 py-3.5 font-medium transition-all;
+}
+.option-btn:hover {
+  @apply border-[var(--color-joyfit-primary)] bg-[var(--color-joyfit-primary-light)];
+}
+.option-btn.selected {
+  border-color: var(--color-joyfit-primary);
+  background-color: var(--color-joyfit-primary-light);
+  color: var(--color-charcoal);
 }

@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# JoyFit MVP v0.1
 
-## Getting Started
+Gamified accountability web app for weight loss: weekly weigh-ins, star rewards, leaderboard, invite system. Next.js App Router, TypeScript, TailwindCSS, Prisma, PostgreSQL.
 
-First, run the development server:
+## Stack
+
+- **Frontend:** Next.js 16 (App Router), TypeScript, TailwindCSS 4, mobile-first
+- **Backend:** Next.js API routes, Prisma 6, PostgreSQL
+- **Node:** >= 20.9.0 required for Next.js 16
+
+## Authentication (MVP)
+
+- **Phone + 6-digit PIN only.** No OTP, no SMS, no external auth provider.
+- User creates a 6-digit PIN on first payment claim or first signup; account is created when phone + PIN are stored.
+- Login uses phone + PIN. PIN is stored as a **bcrypt hash only** (never plain text).
+- Name is optional and not required to log in.
+
+*(Login and payment flows that use this auth model will be implemented in later phases.)*
+
+## Commands
+
+From the app root (folder containing `package.json` and `prisma/`):
+
+```bash
+npm install
+npx prisma generate
+npx prisma migrate dev
+```
+
+If you are **upgrading from the legacy schema** (e.g. previous JoyFit DB with old `User`/`WeighIn`), reset the database and apply the new baseline migration:
+
+```bash
+npx prisma migrate reset
+```
+
+**Warning:** `prisma migrate reset` **drops all data** in the database. Use only in development or when you intend to start fresh.
+
+Then seed demo and admin users:
+
+```bash
+npm run prisma:seed
+```
+
+Start the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- App: http://localhost:3000  
+- Checkup: http://localhost:3000/checkup  
+- Payment: http://localhost:3000/payment  
+- Login: http://localhost:3000/login  
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Seed accounts (after `npm run prisma:seed`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role   | Phone    | PIN    |
+|--------|----------|--------|
+| Demo   | 90000001 … 90000010 | 123456 |
+| Admin  | 99999999 | 123456 |
 
-## Learn More
+All seed users share the same PIN for development. One agent (`AGENT01`) is created; the first two demo users are assigned to that agent.
 
-To learn more about Next.js, take a look at the following resources:
+## Admin panel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **URL:** `/admin` (protected, admin-only)
+- **Access:** Only users with `role="admin"` can access. Non-admin or unauthenticated users are redirected to `/login`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Create or promote an admin user:**
 
-## Deploy on Vercel
+1. **Via seed** (creates admin 99999999): `npm run prisma:seed`
+2. **Via SQL** (promote existing user by phone):
+   ```bash
+   npx prisma db execute --stdin <<< "UPDATE \"User\" SET role = 'admin' WHERE phone = 'YOUR_PHONE';"
+   ```
+3. **Via Prisma Studio:** `npx prisma studio` → open `User` → edit the desired user → set `role` to `admin`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Environment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Copy `.env.example` to `.env` and set `DATABASE_URL` (e.g. `postgresql://joyfit:joyfit@127.0.0.1:5432/joyfit` for local PostgreSQL, or `postgresql://joyfit:joyfit@db:5432/joyfit` when using Docker).
+
+## Phase 1 scope (current)
+
+- **Done:** Prisma schema (8 models, enums, indexes), single baseline migration, seed (10 demo users + 1 admin, bcrypt PIN), README.
+- **No UI or API changes in this phase.** Existing routes (/, /checkup, /payment, /login, /dashboard) are unchanged; they will be updated in later phases to use the new auth model (e.g. /payment to create PIN, /login to authenticate with phone + PIN).
+
+## Prisma
+
+- **Schema:** `prisma/schema.prisma` — User, Lead, PaymentClaim, Invite, JournalDaily, WeighInWeekly, StarsLedger, Agent (camelCase fields, enums, indexes).
+- **Migrations:** `prisma/migrations/`. Use `npx prisma migrate dev` for development; `npx prisma migrate deploy` for production.
+- **Seed:** `prisma/seed.ts` — 10 demo users + 1 admin with hashed PIN; optional 1 agent with 2 users assigned.

@@ -1,0 +1,185 @@
+// JoyFit MVP v0.1 – spec-compliant schema
+// PostgreSQL, camelCase fields
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Gender {
+  male
+  female
+  other
+}
+
+enum ActivityLevel {
+  sedentary
+  light
+  moderate
+  active
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+enum PaymentClaimStatus {
+  submitted
+  approved
+  rejected
+}
+
+enum InviteStatus {
+  invited
+  joined
+  paid
+}
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+model User {
+  id              String        @id @default(uuid())
+  phone           String        @unique
+  pinHash         String
+  email           String?
+  name            String?
+  gender          Gender?
+  age             Int?
+  currentWeightKg Float?
+  goalWeightKg    Float?
+  mealsPerDay     Int?
+  activityLevel   ActivityLevel?
+  approvalStatus  ApprovalStatus @default(pending)
+  role            UserRole      @default(user)
+  agentId         String?
+  agent           Agent?        @relation(fields: [agentId], references: [id])
+  paymentClaims   PaymentClaim[]
+  invitesSent     Invite[]      @relation("InviterInvites")
+  journals        JournalDaily[]
+  weighIns        WeighInWeekly[]
+  stars           StarsLedger[]
+  sessions        Session[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([approvalStatus])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([token])
+  @@index([userId])
+}
+
+model Lead {
+  id        String   @id @default(uuid())
+  email     String
+  phone     String?
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model PaymentClaim {
+  id        String              @id @default(uuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountMnt Int                 @default(89000)
+  notePhone String
+  status    PaymentClaimStatus @default(submitted)
+  paidAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  @@index([status])
+  @@index([userId])
+}
+
+model Invite {
+  id            String      @id @default(uuid())
+  inviterUserId String
+  inviter       User        @relation("InviterInvites", fields: [inviterUserId], references: [id], onDelete: Cascade)
+  friendName    String
+  friendPhone   String
+  status        InviteStatus @default(invited)
+  createdAt     DateTime    @default(now())
+
+  @@index([inviterUserId])
+}
+
+model JournalDaily {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime
+  mealsOnTime  Boolean  @default(false)
+  waterOk      Boolean  @default(false)
+  workoutDone  Boolean  @default(false)
+  workoutNote  String?
+  sleepOk      Boolean  @default(false)
+  note         String?
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+model WeighInWeekly {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStartDate DateTime
+  weightKg      Float
+  imageUrl      String?
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, weekStartDate])
+  @@index([userId, weekStartDate])
+}
+
+model StarsLedger {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStartDate DateTime
+  bronzeCount  Int      @default(0)
+  silverCount  Int      @default(0)
+  goldCount    Int      @default(0)
+  reason       Json
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, weekStartDate])
+  @@index([userId, weekStartDate])
+}
+
+model Agent {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String
+  code      String   @unique
+  users     User[]
+  createdAt DateTime @default(now())
+}
