@@ -15,7 +15,8 @@ export default async function LeaderboardPage() {
     select: {
       id: true,
       phone: true,
-      name: true,
+      firstName: true,
+      lastName: true,
       approvalStatus: true,
       role: true,
     },
@@ -24,6 +25,7 @@ export default async function LeaderboardPage() {
     redirect("/login");
   }
   const tier = getAccessTier(user);
+  const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.phone;
   return (
     <Suspense
       fallback={
@@ -36,7 +38,7 @@ export default async function LeaderboardPage() {
         user={{
           id: user.id,
           phone: user.phone,
-          name: user.name,
+          name: userName,
           approvalStatus: user.approvalStatus,
           role: user.role,
         }}

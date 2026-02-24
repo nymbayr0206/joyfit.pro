@@ -18,17 +18,18 @@ export async function GET(request: NextRequest) {
   const statusParam = searchParams.get("status") ?? "pending";
   const status =
     statusParam === "approved"
-      ? ApprovalStatus.approved
+      ? ApprovalStatus.APPROVED
       : statusParam === "rejected"
-        ? ApprovalStatus.rejected
-        : ApprovalStatus.pending;
+        ? ApprovalStatus.REJECTED
+        : ApprovalStatus.PENDING;
 
   const users = await prisma.user.findMany({
     where: { approvalStatus: status },
     select: {
       id: true,
       phone: true,
-      name: true,
+      firstName: true,
+      lastName: true,
       approvalStatus: true,
       createdAt: true,
       paymentClaims: {
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
   const list = users.map((u) => ({
     id: u.id,
     phone: u.phone,
-    name: u.name,
+    name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.phone,
     approvalStatus: u.approvalStatus,
     createdAt: u.createdAt,
     lastClaim: u.paymentClaims[0]

@@ -1,5 +1,5 @@
-// JoyFit MVP v0.1 – spec-compliant schema
-// PostgreSQL, camelCase fields
+// JoyFit MVP v0.1 – Database Foundation
+// PostgreSQL with Prisma ORM
 
 generator client {
   provider = "prisma-client-js"
@@ -14,40 +14,27 @@ datasource db {
 // Enums
 // ---------------------------------------------------------------------------
 
-enum Gender {
-  male
-  female
-  other
-}
-
-enum ActivityLevel {
-  sedentary
-  light
-  moderate
-  active
+enum UserRole {
+  USER
+  ADMIN
 }
 
 enum ApprovalStatus {
-  pending
-  approved
-  rejected
-}
-
-enum UserRole {
-  user
-  admin
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum PaymentClaimStatus {
-  submitted
-  approved
-  rejected
+  SUBMITTED
+  APPROVED
+  REJECTED
 }
 
-enum InviteStatus {
-  invited
-  joined
-  paid
+enum StarType {
+  BRONZE
+  SILVER
+  GOLD
 }
 
 // ---------------------------------------------------------------------------
@@ -55,31 +42,24 @@ enum InviteStatus {
 // ---------------------------------------------------------------------------
 
 model User {
-  id              String        @id @default(uuid())
-  phone           String        @unique
-  pinHash         String
-  email           String?
-  name            String?
-  gender          Gender?
-  age             Int?
-  currentWeightKg Float?
-  goalWeightKg    Float?
-  mealsPerDay     Int?
-  activityLevel   ActivityLevel?
-  approvalStatus  ApprovalStatus @default(pending)
-  role            UserRole      @default(user)
-  agentId         String?
-  agent           Agent?        @relation(fields: [agentId], references: [id])
-  paymentClaims   PaymentClaim[]
-  invitesSent     Invite[]      @relation("InviterInvites")
-  journals        JournalDaily[]
-  weighIns        WeighInWeekly[]
-  stars           StarsLedger[]
-  sessions        Session[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id             String           @id @default(uuid())
+  phone          String           @unique
+  firstName      String?
+  lastName       String?
+  role           UserRole         @default(USER)
+  approvalStatus ApprovalStatus   @default(PENDING)
+  createdAt      DateTime         @default(now())
+  
+  pinHash        String?
+  sessions       Session[]
+  paymentClaims  PaymentClaim[]
+  journalEntries JournalEntry[]
+  weighIns       WeighIn[]
+  starLedger     StarLedger[]
+  invitesSent    Invite[]
 
   @@index([approvalStatus])
+  @@index([phone])
 }
 
 model Session {
@@ -108,78 +88,70 @@ model PaymentClaim {
   id        String              @id @default(uuid())
   userId    String
   user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amountMnt Int                 @default(89000)
-  notePhone String
-  status    PaymentClaimStatus @default(submitted)
-  paidAt    DateTime?
+  status    PaymentClaimStatus  @default(SUBMITTED)
   createdAt DateTime            @default(now())
+  paidAt    DateTime?
+  note      String?
 
   @@index([status])
   @@index([userId])
 }
 
-model Invite {
-  id            String      @id @default(uuid())
-  inviterUserId String
-  inviter       User        @relation("InviterInvites", fields: [inviterUserId], references: [id], onDelete: Cascade)
-  friendName    String
-  friendPhone   String
-  status        InviteStatus @default(invited)
-  createdAt     DateTime    @default(now())
-
-  @@index([inviterUserId])
-}
-
-model JournalDaily {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date         DateTime
-  mealsOnTime  Boolean  @default(false)
-  waterOk      Boolean  @default(false)
-  workoutDone  Boolean  @default(false)
-  workoutNote  String?
-  sleepOk      Boolean  @default(false)
-  note         String?
-  createdAt    DateTime @default(now())
+model JournalEntry {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime @db.Date
+  mealChecked    Boolean  @default(false)
+  mealNote       String?
+  waterGlasses   Int      @default(0)
+  workoutChecked Boolean  @default(false)
+  workoutNote    String?
+  sleepChecked   Boolean  @default(false)
+  sleepNote      String?
+  feelingNote    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([userId, date])
   @@index([userId])
+  @@index([date])
 }
 
-model WeighInWeekly {
+model WeighIn {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  weightKg  Decimal  @db.Decimal(5, 2)
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+model StarLedger {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      StarType
+  kgDelta   Decimal? @db.Decimal(5, 2)
+  amountMnt Int?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Invite {
   id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  weekStartDate DateTime
-  weightKg      Float
-  imageUrl      String?
+  inviterUserId String
+  inviter       User     @relation(fields: [inviterUserId], references: [id], onDelete: Cascade)
+  code          String   @unique
   createdAt     DateTime @default(now())
 
-  @@unique([userId, weekStartDate])
-  @@index([userId, weekStartDate])
-}
-
-model StarsLedger {
-  id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  weekStartDate DateTime
-  bronzeCount  Int      @default(0)
-  silverCount  Int      @default(0)
-  goldCount    Int      @default(0)
-  reason       Json
-  createdAt    DateTime @default(now())
-
-  @@unique([userId, weekStartDate])
-  @@index([userId, weekStartDate])
-}
-
-model Agent {
-  id        String   @id @default(uuid())
-  name      String
-  phone     String
-  code      String   @unique
-  users     User[]
-  createdAt DateTime @default(now())
+  @@index([inviterUserId])
+  @@index([code])
 }

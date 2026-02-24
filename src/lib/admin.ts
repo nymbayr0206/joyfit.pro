@@ -24,7 +24,7 @@ export async function requireAdmin(): Promise<AdminUser> {
     where: { id: userId },
     select: { id: true, role: true },
   });
-  if (!user || user.role !== UserRole.admin) {
+  if (!user || user.role !== UserRole.ADMIN) {
     const err = new Error("Forbidden");
     (err as { status?: number }).status = 403;
     throw err;

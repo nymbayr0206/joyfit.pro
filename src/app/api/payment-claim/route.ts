@@ -3,8 +3,7 @@ import * as bcrypt from "bcrypt";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/auth";
 import { normalizeMongolianPhone } from "@/lib/phone";
-import { ApprovalStatus } from "@prisma/client";
-import { UserRole } from "@prisma/client";
+import { ApprovalStatus, UserRole, PaymentClaimStatus } from "@prisma/client";
 
 const SALT_ROUNDS = 10;
 
@@ -61,12 +60,12 @@ export async function POST(request: NextRequest) {
         data: {
           phone,
           pinHash,
-          approvalStatus: ApprovalStatus.pending,
-          role: UserRole.user,
+          approvalStatus: ApprovalStatus.PENDING,
+          role: UserRole.USER,
         },
       });
     } else {
-      if (user.approvalStatus === ApprovalStatus.approved) {
+      if (user.approvalStatus === ApprovalStatus.APPROVED) {
         return NextResponse.json(
           {
             ok: false,
@@ -76,7 +75,7 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      if (user.approvalStatus === ApprovalStatus.pending) {
+      if (user.approvalStatus === ApprovalStatus.PENDING) {
         user = await prisma.user.update({
           where: { id: user.id },
           data: { pinHash },
@@ -87,9 +86,8 @@ export async function POST(request: NextRequest) {
     await prisma.paymentClaim.create({
       data: {
         userId: user.id,
-        amountMnt: 89000,
-        notePhone: notePhone || phone,
-        status: "submitted",
+        note: notePhone || phone,
+        status: PaymentClaimStatus.SUBMITTED,
       },
     });
 

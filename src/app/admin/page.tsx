@@ -13,7 +13,7 @@ export default async function AdminPage() {
     where: { id: userId },
     select: { id: true, role: true },
   });
-  if (!user || user.role !== UserRole.admin) {
+  if (!user || user.role !== UserRole.ADMIN) {
     redirect("/login");
   }
   return <AdminClient />;

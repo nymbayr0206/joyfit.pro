@@ -37,7 +37,7 @@ export async function POST(
     );
   }
 
-  if (claim.status !== PaymentClaimStatus.submitted) {
+  if (claim.status !== PaymentClaimStatus.SUBMITTED) {
     return NextResponse.json(
       { ok: false, error: "Claim already processed" },
       { status: 400 }
@@ -46,7 +46,7 @@ export async function POST(
 
   await prisma.paymentClaim.update({
     where: { id },
-    data: { status: PaymentClaimStatus.rejected },
+    data: { status: PaymentClaimStatus.REJECTED },
   });
   // MVP: keep user.approvalStatus as pending (do not set rejected)
 

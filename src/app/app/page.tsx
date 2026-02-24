@@ -13,7 +13,8 @@ export default async function AppPage() {
     select: {
       id: true,
       phone: true,
-      name: true,
+      firstName: true,
+      lastName: true,
       approvalStatus: true,
       role: true,
     },
@@ -21,12 +22,13 @@ export default async function AppPage() {
   if (!user) {
     redirect("/login");
   }
+  const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.phone;
   return (
     <AppDashboardClient
       user={{
         id: user.id,
         phone: user.phone,
-        name: user.name,
+        name: userName,
         approvalStatus: user.approvalStatus,
         role: user.role,
       }}

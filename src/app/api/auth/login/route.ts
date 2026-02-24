@@ -95,6 +95,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!user.pinHash) {
+      recordAttempt(ip);
+      return NextResponse.json(
+        { ok: false, error: "PIN тохируулаагүй байна." },
+        { status: 401 }
+      );
+    }
+
     const match = await bcrypt.compare(pin, user.pinHash);
     if (!match) {
       recordAttempt(ip);
