@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AppHeader } from "@/components/AppHeader";
 
 interface User {
   id: string;
@@ -33,77 +32,44 @@ export function AppDashboardClient({ user }: { user: User }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[var(--color-gray-50)]">
-      <AppHeader>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/app/leaderboard"
-            className="text-sm text-[var(--color-joyfit-primary)] font-medium"
-          >
-            Leaderboard
-          </Link>
-          {user.role === "admin" && (
-            <Link
-              href="/admin"
-              className="text-sm text-[var(--color-joyfit-primary)] font-medium"
-            >
-              Админ
-            </Link>
-          )}
-          <button
-            type="button"
-            onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
-              window.location.href = "/login";
-            }}
-            className="text-sm text-[var(--color-gray-600)]"
-          >
-            Гарах
-          </button>
+    <div className="p-8">
+      <div className="max-w-4xl">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-[var(--color-charcoal)] mb-2">
+            Хянах самбар
+          </h1>
+          <p className="text-[var(--color-gray-600)]">
+            Welcome, {user.name || user.phone}
+            {user.role === "admin" && (
+              <span className="ml-2 text-xs px-2 py-1 rounded-full bg-[var(--color-joyfit-primary-light)] text-[var(--color-joyfit-primary)]">
+                Admin
+              </span>
+            )}
+          </p>
         </div>
-      </AppHeader>
-
-      <main className="max-w-lg mx-auto px-4 py-6">
-        <nav className="mb-6 flex flex-wrap gap-2">
-          <Link
-            href="/app/journal"
-            className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-[var(--color-charcoal)] hover:bg-gray-50"
-          >
-            Өдрийн тэмдэглэл
-          </Link>
-          <Link
-            href="/app/weighin"
-            className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-[var(--color-charcoal)] hover:bg-gray-50"
-          >
-            Жингийн бүртгэл
-          </Link>
-          <Link
-            href="/app/invite"
-            className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-[var(--color-charcoal)] hover:bg-gray-50"
-          >
-            Урилга
-          </Link>
-        </nav>
 
         <section className="mb-8">
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)] mb-3">
-            Leaderboard
+          <h2 className="text-lg font-bold text-[var(--color-charcoal)] mb-4">
+            Top Performers
           </h2>
-          <div className="step-card">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
             {leaderboard.length === 0 ? (
               <p className="text-sm text-[var(--color-gray-600)]">
                 Одоогоор мэдээлэл байхгүй.
               </p>
             ) : (
-              <ul className="space-y-2">
-                {leaderboard.map((entry, i) => (
+              <ul className="space-y-3">
+                {leaderboard.slice(0, 5).map((entry, i) => (
                   <li
                     key={entry.userId}
                     className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
                   >
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-3">
+                      <span className="text-lg font-bold text-[var(--color-gray-400)] w-6">
+                        {i + 1}
+                      </span>
                       <span className="text-sm font-medium text-[var(--color-charcoal)]">
-                        {i + 1}. {entry.displayName}
+                        {entry.displayName}
                       </span>
                       {entry.approvalStatus && entry.approvalStatus !== "approved" && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
@@ -111,16 +77,38 @@ export function AppDashboardClient({ user }: { user: User }) {
                         </span>
                       )}
                     </span>
-                    <span className="text-xs text-[var(--color-gray-600)]">
-                      🥇{entry.gold} 🥈{entry.silver} 🥉{entry.bronze}
+                    <span className="text-sm text-[var(--color-gray-600)] flex items-center gap-2">
+                      <span>🥇{entry.gold}</span>
+                      <span>🥈{entry.silver}</span>
+                      <span>🥉{entry.bronze}</span>
                     </span>
                   </li>
                 ))}
               </ul>
             )}
+            <Link
+              href="/app/leaderboard"
+              className="mt-4 text-sm text-[var(--color-joyfit-primary)] font-medium inline-block hover:underline"
+            >
+              View full leaderboard →
+            </Link>
           </div>
         </section>
-      </main>
+
+        {user.role === "admin" && (
+          <section>
+            <h2 className="text-lg font-bold text-[var(--color-charcoal)] mb-4">
+              Admin Actions
+            </h2>
+            <Link
+              href="/admin"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[var(--color-charcoal)] text-white font-medium hover:bg-[var(--color-charcoal-soft)] transition-all"
+            >
+              Open Admin Panel
+            </Link>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,91 +1,182 @@
-# JoyFit MVP v0.1
+# JoyFit MVP – Production Scaffold
 
-Gamified accountability web app for weight loss: weekly weigh-ins, star rewards, leaderboard, invite system. Next.js App Router, TypeScript, TailwindCSS, Prisma, PostgreSQL.
+Gamified accountability web app for weight loss with weekly weigh-ins, star rewards, leaderboard, and invite system.
 
-## Stack
+## Tech Stack
 
-- **Frontend:** Next.js 16 (App Router), TypeScript, TailwindCSS 4, mobile-first
+- **Frontend:** Next.js 14 (App Router), TypeScript, TailwindCSS 4, Lucide Icons
 - **Backend:** Next.js API routes, Prisma 6, PostgreSQL
-- **Node:** >= 20.9.0 required for Next.js 16
+- **Node:** >= 20.9.0 required for Next.js 14+
+- **Auth:** Phone + 6-digit PIN (bcrypt hashed)
 
-## Authentication (MVP)
+## Project Structure
 
-- **Phone + 6-digit PIN only.** No OTP, no SMS, no external auth provider.
-- User creates a 6-digit PIN on first payment claim or first signup; account is created when phone + PIN are stored.
-- Login uses phone + PIN. PIN is stored as a **bcrypt hash only** (never plain text).
-- Name is optional and not required to log in.
+```
+/src
+  /app
+    /                    # Landing page with CTA to /checkup
+    /login              # Login page (phone + PIN)
+    /checkup            # Lead generation wizard
+    /app                # Protected app area with sidebar layout
+      /leaderboard      # Leaderboard page (locked placeholder)
+      /journal          # Daily journal (locked placeholder)
+      /weighin          # Weekly weigh-in (locked placeholder)
+      /invite           # Invite friends (locked placeholder)
+    /admin              # Admin panel (role-gated)
+  /components           # Reusable React components
+  /lib                  # Utilities (auth, env validation, prisma)
+/prisma                 # Database schema and migrations
+```
 
-*(Login and payment flows that use this auth model will be implemented in later phases.)*
+## Quick Start
 
-## Commands
+### 1. Prerequisites
 
-From the app root (folder containing `package.json` and `prisma/`):
+- Node.js >= 20.9.0
+- PostgreSQL database (local or remote)
+
+### 2. Install Dependencies
 
 ```bash
 npm install
+```
+
+### 3. Environment Setup
+
+Copy the example environment file and configure your database:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set your `DATABASE_URL`:
+
+```bash
+DATABASE_URL="postgresql://user:password@localhost:5432/joyfit"
+NODE_ENV="development"
+DEV_LOGIN_CODE="1111"
+```
+
+### 4. Database Setup
+
+Generate Prisma client and run migrations:
+
+```bash
 npx prisma generate
 npx prisma migrate dev
 ```
 
-If you are **upgrading from the legacy schema** (e.g. previous JoyFit DB with old `User`/`WeighIn`), reset the database and apply the new baseline migration:
+**Note:** If upgrading from a legacy schema, use `npx prisma migrate reset` to drop all data and start fresh.
 
-```bash
-npx prisma migrate reset
-```
+### 5. Seed Demo Data
 
-**Warning:** `prisma migrate reset` **drops all data** in the database. Use only in development or when you intend to start fresh.
-
-Then seed demo and admin users:
+Seed the database with demo users and an admin account:
 
 ```bash
 npm run prisma:seed
 ```
 
-Start the dev server:
+This creates:
+- 10 demo users (phones: 90000001–90000010, PIN: 123456)
+- 1 admin user (phone: 99999999, PIN: 123456)
+
+### 6. Start Development Server
 
 ```bash
 npm run dev
 ```
 
-- App: http://localhost:3000  
-- Checkup: http://localhost:3000/checkup  
-- Payment: http://localhost:3000/payment  
-- Login: http://localhost:3000/login  
+Visit:
+- Landing: http://localhost:3000
+- Login: http://localhost:3000/login
+- App Dashboard: http://localhost:3000/app
+- Admin Panel: http://localhost:3000/admin  
 
-## Seed accounts (after `npm run prisma:seed`)
+## Routes Overview
 
-| Role   | Phone    | PIN    |
-|--------|----------|--------|
-| Demo   | 90000001 … 90000010 | 123456 |
-| Admin  | 99999999 | 123456 |
+### Public Routes
+- **`/`** – Landing page with CTA to `/checkup`
+- **`/login`** – Phone + PIN login
+- **`/checkup`** – Lead generation wizard (health/weight questionnaire)
 
-All seed users share the same PIN for development. One agent (`AGENT01`) is created; the first two demo users are assigned to that agent.
+### Protected Routes (Requires Auth)
+- **`/app`** – Dashboard with sidebar navigation
+- **`/app/leaderboard`** – Leaderboard (locked placeholder)
+- **`/app/journal`** – Daily journal tracking (locked placeholder)
+- **`/app/weighin`** – Weekly weigh-in recording (locked placeholder)
+- **`/app/invite`** – Friend invite system (locked placeholder)
 
-## Admin panel
+### Admin Routes (Requires Admin Role)
+- **`/admin`** – Admin panel for user/payment approval
 
-- **URL:** `/admin` (protected, admin-only)
-- **Access:** Only users with `role="admin"` can access. Non-admin or unauthenticated users are redirected to `/login`.
+## Seed Accounts
+
+After running `npm run prisma:seed`:
+
+| Role   | Phone    | PIN    | Access |
+|--------|----------|--------|--------|
+| Demo   | 90000001–90000010 | 123456 | User dashboard |
+| Admin  | 99999999 | 123456 | Admin panel + dashboard |
+
+## Building for Production
+
+Test the production build:
+
+```bash
+npm run build
+npm start
+```
+
+The build command:
+1. Generates Prisma client
+2. Validates environment variables
+3. Builds Next.js app with TypeScript checking
+4. Outputs to `.next/` directory
+
+## Environment Variables
+
+All environment variables are validated at build time via `src/lib/env.ts`.
+
+**Required:**
+- `DATABASE_URL` – PostgreSQL connection string
+
+**Optional:**
+- `NODE_ENV` – `development` | `production` | `test`
+- `DEV_LOGIN_CODE` – Dev login bypass code (default: `1111`)
+
+## Admin Access
 
 **Create or promote an admin user:**
 
-1. **Via seed** (creates admin 99999999): `npm run prisma:seed`
-2. **Via SQL** (promote existing user by phone):
+1. **Via seed:** `npm run prisma:seed` (creates admin 99999999)
+2. **Via SQL:**
    ```bash
    npx prisma db execute --stdin <<< "UPDATE \"User\" SET role = 'admin' WHERE phone = 'YOUR_PHONE';"
    ```
-3. **Via Prisma Studio:** `npx prisma studio` → open `User` → edit the desired user → set `role` to `admin`
+3. **Via Prisma Studio:**
+   ```bash
+   npx prisma studio
+   ```
+   Then open `User` table → edit user → set `role` to `admin`
 
-## Environment
+## Database Schema
 
-- Copy `.env.example` to `.env` and set `DATABASE_URL` (e.g. `postgresql://joyfit:joyfit@127.0.0.1:5432/joyfit` for local PostgreSQL, or `postgresql://joyfit:joyfit@db:5432/joyfit` when using Docker).
+The app uses Prisma 6 with PostgreSQL:
 
-## Phase 1 scope (current)
+- **Models:** User, Session, Lead, PaymentClaim, Invite, JournalDaily, WeighInWeekly, StarsLedger, Agent
+- **Enums:** Gender, ActivityLevel, ApprovalStatus, UserRole, PaymentClaimStatus, InviteStatus
+- **Schema file:** `prisma/schema.prisma`
+- **Migrations:** `prisma/migrations/`
 
-- **Done:** Prisma schema (8 models, enums, indexes), single baseline migration, seed (10 demo users + 1 admin, bcrypt PIN), README.
-- **No UI or API changes in this phase.** Existing routes (/, /checkup, /payment, /login, /dashboard) are unchanged; they will be updated in later phases to use the new auth model (e.g. /payment to create PIN, /login to authenticate with phone + PIN).
+**Useful commands:**
+- `npx prisma studio` – Open database GUI
+- `npx prisma migrate dev` – Create and apply migrations
+- `npx prisma migrate reset` – Reset database (WARNING: deletes all data)
 
-## Prisma
+## Development Notes
 
-- **Schema:** `prisma/schema.prisma` — User, Lead, PaymentClaim, Invite, JournalDaily, WeighInWeekly, StarsLedger, Agent (camelCase fields, enums, indexes).
-- **Migrations:** `prisma/migrations/`. Use `npx prisma migrate dev` for development; `npx prisma migrate deploy` for production.
-- **Seed:** `prisma/seed.ts` — 10 demo users + 1 admin with hashed PIN; optional 1 agent with 2 users assigned.
+- **ESLint:** Configured with Next.js rules (`eslint.config.mjs`)
+- **TypeScript:** Strict mode enabled (`tsconfig.json`)
+- **TailwindCSS:** v4 with custom design tokens in `globals.css`
+- **Auth:** Session-based with cookies, bcrypt for PIN hashing
+- **Layout:** `/app` routes use sidebar layout with locked placeholders
