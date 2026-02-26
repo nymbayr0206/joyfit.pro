@@ -37,7 +37,7 @@ export async function POST(
     );
   }
 
-  if (claim.status !== PaymentClaimStatus.submitted) {
+  if (claim.status !== PaymentClaimStatus.SUBMITTED) {
     return NextResponse.json(
       { ok: false, error: "Claim already processed" },
       { status: 400 }
@@ -48,11 +48,11 @@ export async function POST(
   await prisma.$transaction([
     prisma.paymentClaim.update({
       where: { id },
-      data: { status: PaymentClaimStatus.approved, paidAt: now },
+      data: { status: PaymentClaimStatus.APPROVED, paidAt: now },
     }),
     prisma.user.update({
       where: { id: claim.userId },
-      data: { approvalStatus: ApprovalStatus.approved },
+      data: { approvalStatus: ApprovalStatus.APPROVED },
     }),
   ]);
 

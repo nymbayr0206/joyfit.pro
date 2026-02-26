@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
 
   const status =
     statusParam === "approved"
-      ? PaymentClaimStatus.approved
+      ? PaymentClaimStatus.APPROVED
       : statusParam === "rejected"
-        ? PaymentClaimStatus.rejected
-        : PaymentClaimStatus.submitted;
+        ? PaymentClaimStatus.REJECTED
+        : PaymentClaimStatus.SUBMITTED;
 
   const where: { status: PaymentClaimStatus; user?: { phone: string } } = {
     status,
@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
         select: {
           id: true,
           phone: true,
-          name: true,
+          firstName: true,
+          lastName: true,
           approvalStatus: true,
         },
       },
@@ -50,8 +51,7 @@ export async function GET(request: NextRequest) {
   const list = claims.map((c) => ({
     claim: {
       id: c.id,
-      amountMnt: c.amountMnt,
-      notePhone: c.notePhone,
+      note: c.note,
       status: c.status,
       createdAt: c.createdAt,
       paidAt: c.paidAt,
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     user: {
       id: c.user.id,
       phone: c.user.phone,
-      name: c.user.name,
+      name: `${c.user.firstName || ''} ${c.user.lastName || ''}`.trim() || c.user.phone,
       approvalStatus: c.user.approvalStatus,
     },
   }));

@@ -1,107 +1,119 @@
-import { PrismaClient, UserRole, ApprovalStatus } from "@prisma/client";
-import * as bcrypt from "bcrypt";
+import { PrismaClient, UserRole, ApprovalStatus, StarType } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const DEV_PIN = "123456";
-const SALT_ROUNDS = 10;
+const mongolianFirstNames = [
+  "Бат", "Болд", "Энх", "Отгон", "Дорж", "Пүрэв", "Цэрэн", "Сайхан",
+  "Мөнх", "Баяр", "Түмэн", "Гал", "Чулуун", "Дэлгэр", "Ган", "Тэмүүлэн",
+  "Алтан", "Эрдэнэ", "Цэцэг", "Сарнай", "Нaran", "Оюун", "Золзаяа", "Ууганбаяр",
+  "Амар", "Санаа", "Тэмүү", "Билгүүн", "Нарантуяа", "Цогт", "Баатар", "Жаргал",
+  "Сүх", "Мягмар", "Лувсан", "Дамдин", "Батбаяр", "Очир", "Гантулга", "Ханд",
+  "Тунгалаг", "Ариун", "Сэлэнгэ", "Номин", "Уянга", "Сайнбаяр", "Энхтуяа", "Мөнхбат",
+  "Золзаяа", "Дэлгэрмаа", "Энхжин", "Ганзориг", "Анхбаяр", "Ууганцэцэг", "Энхмөнх", "Болормаа",
+  "Батсайхан", "Цэндсүрэн", "Цолмон", "Мөнхцэцэг", "Ганболд", "Төгөлдөр", "Ариунболд"
+];
+
+const mongolianLastNames = [
+  "баатар", "бат", "дорж", "жав", "өд", "сүх", "гэрэл", "чулуун",
+  "эрдэнэ", "очир", "болд", "мөнх", "түмэн", "цэрэн", "пүрэв", "баяр"
+];
 
 async function main() {
-  const pinHash = bcrypt.hashSync(DEV_PIN, SALT_ROUNDS);
+  console.log("🌱 Starting seed...");
 
-  // Optional: 1 Agent, assign to 2 demo users
-  const agent = await prisma.agent.upsert({
-    where: { code: "AGENT01" },
-    create: {
-      name: "Эхний агент",
-      phone: "90001111",
-      code: "AGENT01",
-    },
-    update: {},
-  });
-
-  const demoPhones = Array.from({ length: 10 }, (_, i) =>
-    String(90000001 + i).padStart(8, "0")
-  );
-  const mongolianNames = [
-    "Бат-Эрдэнэ",
-    "Сарнай",
-    "Тэмүүлэн",
-    "Отгонбаяр",
-    "Нарантуяа",
-    "Энхжин",
-    "Болд",
-    "Дэлгэрмаа",
-    "Ганбат",
-    "Ууганбаяр",
-  ];
-  const weightPairs: { current: number; goal: number }[] = [
-    { current: 72, goal: 65 },
-    { current: 68, goal: 62 },
-    { current: 80, goal: 72 },
-    { current: 75, goal: 68 },
-    { current: 70, goal: 64 },
-    { current: 85, goal: 78 },
-    { current: 66, goal: 60 },
-    { current: 78, goal: 70 },
-    { current: 74, goal: 68 },
-    { current: 82, goal: 75 },
-  ];
-
-  for (let i = 0; i < demoPhones.length; i++) {
-    const phone = demoPhones[i];
-    const name = mongolianNames[i];
-    const { current, goal } = weightPairs[i];
-    const assignAgent = i < 2 ? agent.id : undefined;
-
-    await prisma.user.upsert({
-      where: { phone },
-      create: {
-        phone,
-        pinHash,
-        name,
-        currentWeightKg: current,
-        goalWeightKg: goal,
-        approvalStatus: ApprovalStatus.approved,
-        role: UserRole.user,
-        agentId: assignAgent,
-      },
-      update: {
-        pinHash,
-        name,
-        currentWeightKg: current,
-        goalWeightKg: goal,
-        approvalStatus: ApprovalStatus.approved,
-        role: UserRole.user,
-        agentId: assignAgent,
-      },
-    });
-  }
-
-  // Admin user
   await prisma.user.upsert({
     where: { phone: "99999999" },
     create: {
       phone: "99999999",
-      pinHash,
-      name: "Admin",
-      approvalStatus: ApprovalStatus.approved,
-      role: UserRole.admin,
+      firstName: "Admin",
+      lastName: "System",
+      approvalStatus: ApprovalStatus.APPROVED,
+      role: UserRole.ADMIN,
     },
     update: {
-      pinHash,
-      approvalStatus: ApprovalStatus.approved,
-      role: UserRole.admin,
+      firstName: "Admin",
+      lastName: "System",
+      approvalStatus: ApprovalStatus.APPROVED,
+      role: UserRole.ADMIN,
     },
   });
+  console.log("✓ Admin user created (phone: 99999999)");
 
-  console.log("Seed done: 10 demo users, 1 admin, 1 agent (2 users assigned).");
+  const userCount = 63;
+  let created = 0;
+  
+  for (let i = 0; i < userCount; i++) {
+    const phone = String(88000000 + i).padStart(8, "0");
+    const firstName = mongolianFirstNames[i % mongolianFirstNames.length];
+    const lastName = mongolianLastNames[i % mongolianLastNames.length];
+    
+    await prisma.user.upsert({
+      where: { phone },
+      create: {
+        phone,
+        firstName,
+        lastName,
+        approvalStatus: ApprovalStatus.APPROVED,
+        role: UserRole.USER,
+      },
+      update: {
+        firstName,
+        lastName,
+        approvalStatus: ApprovalStatus.APPROVED,
+        role: UserRole.USER,
+      },
+    });
+    created++;
+  }
+  
+  console.log(`✓ ${created} demo users created`);
+
+  const users = await prisma.user.findMany({
+    where: { role: UserRole.USER },
+    take: 20,
+  });
+
+  for (const user of users.slice(0, 10)) {
+    await prisma.starLedger.create({
+      data: {
+        userId: user.id,
+        type: StarType.BRONZE,
+        kgDelta: 0.5,
+        createdAt: new Date(),
+      },
+    });
+  }
+
+  for (const user of users.slice(0, 5)) {
+    await prisma.starLedger.create({
+      data: {
+        userId: user.id,
+        type: StarType.SILVER,
+        kgDelta: 1.0,
+        createdAt: new Date(),
+      },
+    });
+  }
+
+  for (const user of users.slice(0, 2)) {
+    await prisma.starLedger.create({
+      data: {
+        userId: user.id,
+        type: StarType.GOLD,
+        kgDelta: 2.0,
+        createdAt: new Date(),
+      },
+    });
+  }
+
+  console.log("✓ Sample star ledger entries created for leaderboard");
+  console.log(`\n🎉 Seed complete: 1 admin + ${userCount} demo users with sample stars`);
 }
 
 main()
   .then(() => prisma.$disconnect())
   .catch((e) => {
-    console.error(e);
+    console.error("❌ Seed error:", e);
     prisma.$disconnect();
     process.exit(1);
   });

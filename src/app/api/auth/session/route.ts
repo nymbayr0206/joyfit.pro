@@ -12,7 +12,8 @@ export async function GET() {
     select: {
       id: true,
       phone: true,
-      name: true,
+      firstName: true,
+      lastName: true,
       approvalStatus: true,
       role: true,
     },
@@ -20,5 +21,9 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ ok: false, user: null });
   }
-  return NextResponse.json({ ok: true, user });
+  const userData = {
+    ...user,
+    name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.phone,
+  };
+  return NextResponse.json({ ok: true, user: userData });
 }
