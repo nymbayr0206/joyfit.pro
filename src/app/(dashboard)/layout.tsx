@@ -1,13 +1,19 @@
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/auth";
-import { AppDashboardClient } from "./AppDashboardClient";
+import { prisma } from "@/lib/prisma";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
-export default async function AppPage() {
+export default async function AppLayoutWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const userId = await getSessionUserId();
+  
   if (!userId) {
     redirect("/login");
   }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -18,11 +24,13 @@ export default async function AppPage() {
       role: true,
     },
   });
+
   if (!user) {
     redirect("/login");
   }
+
   return (
-    <AppDashboardClient
+    <DashboardLayout
       user={{
         id: user.id,
         phone: user.phone,
@@ -30,6 +38,8 @@ export default async function AppPage() {
         approvalStatus: user.approvalStatus,
         role: user.role,
       }}
-    />
+    >
+      {children}
+    </DashboardLayout>
   );
 }
