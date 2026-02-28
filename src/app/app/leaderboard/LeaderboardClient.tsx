@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AppHeader } from "@/components/AppHeader";
 import type { AccessTier } from "@/lib/access";
 
 interface User {
@@ -43,7 +42,6 @@ export function LeaderboardClient({ user, tier }: LeaderboardClientProps) {
       });
   }, []);
 
-  // Auto-dismiss locked toast after 5s
   useEffect(() => {
     if (!showLockedToast) return;
     const t = setTimeout(() => setShowLockedToast(false), 5000);
@@ -51,39 +49,15 @@ export function LeaderboardClient({ user, tier }: LeaderboardClientProps) {
   }, [showLockedToast]);
 
   return (
-    <div className="min-h-screen bg-[var(--color-gray-50)]">
-      <AppHeader>
-        <div className="flex items-center gap-3">
-          {user.role === "admin" && (
-            <Link
-              href="/admin"
-              className="text-sm text-[var(--color-joyfit-primary)] font-medium"
-            >
-              Админ
-            </Link>
-          )}
-          {user.approvalStatus === "approved" && (
-            <Link
-              href="/app"
-              className="text-sm text-[var(--color-gray-600)] font-medium"
-            >
-              Самбар
-            </Link>
-          )}
-          <button
-            type="button"
-            onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
-              window.location.href = "/login";
-            }}
-            className="text-sm text-[var(--color-gray-600)]"
-          >
-            Гарах
-          </button>
-        </div>
-      </AppHeader>
+    <div className="p-8">
+      <div className="max-w-4xl">
+        <h1 className="text-2xl font-bold text-[var(--color-charcoal)] mb-2">
+          Тэргүүлэгчид
+        </h1>
+        <p className="text-[var(--color-gray-600)] mb-6">
+          See how you stack up against other JoyFit members.
+        </p>
 
-      <main className="max-w-lg mx-auto px-4 py-6">
         {showLockedToast && (
           <div className="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start justify-between gap-2">
             <p className="text-sm text-amber-800">
@@ -117,42 +91,42 @@ export function LeaderboardClient({ user, tier }: LeaderboardClientProps) {
           </div>
         )}
 
-        <section>
-          <h2 className="text-lg font-bold text-[var(--color-charcoal)] mb-3">
-            Leaderboard
-          </h2>
-          <div className="step-card">
-            {leaderboard.length === 0 ? (
-              <p className="text-sm text-[var(--color-gray-600)]">
-                Одоогоор мэдээлэл байхгүй.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {leaderboard.map((entry, i) => (
-                  <li
-                    key={entry.userId}
-                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-[var(--color-charcoal)]">
-                        {i + 1}. {entry.displayName}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          {leaderboard.length === 0 ? (
+            <p className="text-sm text-[var(--color-gray-600)]">
+              Одоогоор мэдээлэл байхгүй.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {leaderboard.map((entry, i) => (
+                <li
+                  key={entry.userId}
+                  className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className={`text-lg font-bold w-8 ${i < 3 ? 'text-[var(--color-joyfit-primary)]' : 'text-[var(--color-gray-400)]'}`}>
+                      {i + 1}
+                    </span>
+                    <span className="text-sm font-medium text-[var(--color-charcoal)]">
+                      {entry.displayName}
+                    </span>
+                    {entry.approvalStatus !== "approved" && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                        Pending
                       </span>
-                      {entry.approvalStatus !== "approved" && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                          Pending
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-xs text-[var(--color-gray-600)]">
-                      🥇{entry.gold} 🥈{entry.silver} 🥉{entry.bronze}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-      </main>
+                    )}
+                  </span>
+                  <span className="text-sm text-[var(--color-gray-600)] flex items-center gap-2">
+                    <span>🥇{entry.gold}</span>
+                    <span>🥈{entry.silver}</span>
+                    <span>🥉{entry.bronze}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
